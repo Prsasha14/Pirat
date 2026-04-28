@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Пошук піратських скарбів</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #0b1b2b;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: #10263d;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    header button {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #teacherModeBtn {
+      background: #f0b400;
+      color: #000;
+    }
+
+    #studentModeBtn {
+      background: #00b894;
+      color: #000;
+      margin-left: 8px;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    #leftPanel {
+      width: 65%;
+      position: relative;
+      background: radial-gradient(circle at 50% 30%, #f7e7b0 0, #d9b36c 40%, #8b5a2b 100%);
+      /* Стилізована "карта скарбів" без зовнішнього зображення */
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
+    }
+
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      display: block;
+    }
+
+    #rightPanel {
+      width: 35%;
+      background: #15273b;
+      padding: 15px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .task-input {
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      box-sizing: border-box;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+
+    .btn-primary {
+      background: #0984e3;
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: #d63031;
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #636e72;
+      color: #fff;
+    }
+
+    #tasksList {
+      margin-top: 10px;
+      border-top: 1px solid #34495e;
+      padding-top: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .task-item {
+      padding: 4px 0;
+      border-bottom: 1px dashed #34495e;
+      font-size: 14px;
+    }
+
+    #gameInfo {
+      margin-top: 10px;
+      padding: 10px;
+      background: #1f334a;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    #questionArea {
+      margin-top: 10px;
+      padding: 10px;
+      background: #1f334a;
+      border-radius: 6px;
+    }
+
+    #questionText {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    #answerInput {
+      width: 100%;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      box-sizing: border-box;
+      margin-bottom: 8px;
+    }
+
+    #resultArea {
+      margin-top: 10px;
+      padding: 10px;
+      background: #1f334a;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .stars {
+      font-size: 24px;
+      color: #f1c40f;
+    }
+
+    #captainSpeech {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 6px;
+      font-style: italic;
+      font-size: 14px;
+    }
+
+    #linkOutput {
+      margin-top: 10px;
+      word-break: break-all;
+      font-size: 13px;
+      background: #0f1f33;
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    /* Персонажі — стилізовані фігури без зовнішніх картинок */
+    .character {
+      position: absolute;
+      bottom: 20px;
+      width: 80px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.5s ease, filter 0.3s ease;
+    }
+
+    #captain {
+      left: 8%;
+    }
+
+    #parrot {
+      left: 20%;
+      bottom: 120px;
+      width: 60px;
+      height: 80px;
+    }
+
+    .captain-body {
+      width: 60px;
+      height: 90px;
+      background: linear-gradient(to bottom, #1e3a5f 0, #1e3a5f 60%, #8b4513 60%, #8b4513 100%);
+      border-radius: 10px;
+      position: relative;
+      box-shadow: 0 0 6px rgba(0,0,0,0.6);
+    }
+
+    .captain-head {
+      width: 40px;
+      height: 40px;
+      background: #f1c27d;
+      border-radius: 50%;
+      position: absolute;
+      top: -25px;
+      left: 10px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+
+    .captain-hat {
+      width: 50px;
+      height: 20px;
+      background: #000;
+      border-radius: 50% 50% 10px 10px;
+      position: absolute;
+      top: -35px;
+      left: 5px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.7);
+    }
+
+    .captain-eye {
+      width: 6px;
+      height: 6px;
+      background: #000;
+      border-radius: 50%;
+      position: absolute;
+      top: 10px;
+    }
+
+    .captain-eye.left {
+      left: 10px;
+    }
+
+    .captain-eye.right {
+      right: 10px;
+    }
+
+    .captain-beard {
+      width: 30px;
+      height: 18px;
+      background: #5a3b1e;
+      border-radius: 0 0 20px 20px;
+      position: absolute;
+      bottom: -8px;
+      left: 5px;
+    }
+
+    .parrot-body {
+      width: 40px;
+      height: 50px;
+      background: linear-gradient(to bottom, #27ae60, #16a085);
+      border-radius: 20px;
+      position: relative;
+      box-shadow: 0 0 6px rgba(0,0,0,0.6);
+    }
+
+    .parrot-head {
+      width: 30px;
+      height: 30px;
+      background: #2ecc71;
+      border-radius: 50%;
+      position: absolute;
+      top: -18px;
+      left: 5px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+
+    .parrot-eye {
+      width: 6px;
+      height: 6px;
+      background: #000;
+      border-radius: 50%;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+
+    .parrot-beak {
+      width: 10px;
+      height: 10px;
+      background: #f1c40f;
+      border-radius: 0 50% 50% 0;
+      position: absolute;
+      top: 12px;
+      right: -6px;
+    }
+
+    .parrot-wing {
+      width: 16px;
+      height: 26px;
+      background: #1abc9c;
+      border-radius: 50%;
+      position: absolute;
+      right: -4px;
+      top: 14px;
+    }
+
+    .happy {
+      transform: translateY(-10px) scale(1.05);
+      filter: brightness(1.3);
+    }
+
+    .sad {
+      transform: translateY(5px) scale(0.95);
+      filter: grayscale(0.6);
+    }
+
+    /* Анімація "ходьби" (легке погойдування) */
+    @keyframes walk {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+      100% { transform: translateY(0); }
+    }
+
+    .walking {
+      animation: walk 0.6s infinite;
+    }
+
+    #audioContainer {
+      display: none;
+    }
+
+    /* Блок автогенерації завдань */
+    #autoGenBox {
+      margin-top: 10px;
+      padding: 8px;
+      background: #1f334a;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    #autoGenBox label {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    #autoGenBox select,
+    #autoGenBox input {
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      box-sizing: border-box;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Пошук піратських скарбів</h1>
+  <div>
+    <button id="teacherModeBtn">Режим вчителя</button>
+    <button id="studentModeBtn">Режим учня</button>
+  </div>
+</header>
+
+<main>
+  <div id="leftPanel">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Капітан Роджер -->
+    <div id="captain" class="character">
+      <div class="captain-body">
+        <div class="captain-head">
+          <div class="captain-eye left"></div>
+          <div class="captain-eye right"></div>
+          <div class="captain-beard"></div>
+        </div>
+        <div class="captain-hat"></div>
+      </div>
+    </div>
+
+    <!-- Папуга Джек -->
+    <div id="parrot" class="character">
+      <div class="parrot-body">
+        <div class="parrot-head">
+          <div class="parrot-eye"></div>
+          <div class="parrot-beak"></div>
+        </div>
+        <div class="parrot-wing"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="rightPanel">
+    <!-- Блок вчителя -->
+    <section id="teacherPanel" class="">
+      <h2>Режим вчителя</h2>
+      <p>Додай математичні завдання (вирази або рівняння) та правильні відповіді.</p>
+      <input id="taskQuestion" class="task-input" placeholder="Наприклад: 5 + 7 = ?" />
+      <input id="taskAnswer" class="task-input" placeholder="Правильна відповідь (число)" />
+      <button id="addTaskBtn" class="btn btn-primary">Додати завдання</button>
+      <button id="clearTasksBtn" class="btn btn-danger">Очистити всі завдання</button>
+
+      <!-- Автогенерація завдань -->
+      <div id="autoGenBox">
+        <b>Автогенерація завдань</b>
+        <label for="difficultySelect">Рівень складності:</label>
+        <select id="difficultySelect">
+          <option value="easy">Легкий (додавання/віднімання)</option>
+          <option value="medium">Середній (×, ÷, змішані)</option>
+          <option value="hard">Складний (вирази з дужками)</option>
+        </select>
+        <label for="autoCountInput">Кількість завдань:</label>
+        <input id="autoCountInput" type="number" min="1" max="50" value="10" />
+        <button id="autoGenBtn" class="btn btn-secondary">Згенерувати завдання</button>
+      </div>
+
+      <div id="tasksList"></div>
+
+      <button id="generateLinkBtn" class="btn btn-secondary">Згенерувати посилання для учнів</button>
+      <div id="linkOutput"></div>
+    </section>
+
+    <!-- Блок учня -->
+    <section id="studentPanel" class="hidden">
+      <h2>Режим учня</h2>
+      <div id="gameInfo">
+        <div><b>Життя:</b> <span id="livesDisplay">3</span></div>
+        <div><b>Завдання:</b> <span id="taskIndexDisplay">0</span>/<span id="taskTotalDisplay">0</span></div>
+        <div><b>Правильних відповідей:</b> <span id="correctCountDisplay">0</span></div>
+        <div><b>Час:</b> <span id="timeDisplay">00:00</span></div>
+      </div>
+
+      <div id="questionArea">
+        <div id="questionText">Натисни "Почати гру", щоб розпочати.</div>
+        <input id="answerInput" type="number" placeholder="Введи відповідь" />
+        <button id="submitAnswerBtn" class="btn btn-primary">Відповісти</button>
+        <button id="startGameBtn" class="btn btn-secondary">Почати гру</button>
+      </div>
+
+      <div id="resultArea"></div>
+
+      <div id="captainSpeech"></div>
+    </section>
+  </div>
+</main>
+
+<!-- Аудіо (можеш замінити на свої файли) -->
+<div id="audioContainer">
+  <audio id="audioCorrect">
+    <source src="" type="audio/mpeg">
+  </audio>
+  <audio id="audioTreasure">
+    <source src="" type="audio/mpeg">
+  </audio>
+  <audio id="audioLoseLife">
+    <source src="" type="audio/mpeg">
+  </audio>
+</div>
+
+<script>
+  // ---------------------------
+  // Дані завдань
+  // ---------------------------
+  let tasks = []; // {question: string, answer: number}
+
+  // Спроба прочитати завдання з URL (режим учня)
+  function loadTasksFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get("tasks");
+    if (!encoded) return;
+    try {
+      const json = decodeURIComponent(atob(encoded));
+      const parsed = JSON.parse(json);
+      if (Array.isArray(parsed)) {
+        tasks = parsed;
+      }
+    } catch (e) {
+      console.error("Помилка читання завдань з URL", e);
+    }
+  }
+
+  // ---------------------------
+  // Елементи DOM
+  // ---------------------------
+  const teacherModeBtn = document.getElementById("teacherModeBtn");
+  const studentModeBtn = document.getElementById("studentModeBtn");
+
+  const teacherPanel = document.getElementById("teacherPanel");
+  const studentPanel = document.getElementById("studentPanel");
+
+  const taskQuestionInput = document.getElementById("taskQuestion");
+  const taskAnswerInput = document.getElementById("taskAnswer");
+  const addTaskBtn = document.getElementById("addTaskBtn");
+  const clearTasksBtn = document.getElementById("clearTasksBtn");
+  const tasksListDiv = document.getElementById("tasksList");
+  const generateLinkBtn = document.getElementById("generateLinkBtn");
+  const linkOutputDiv = document.getElementById("linkOutput");
+
+  const difficultySelect = document.getElementById("difficultySelect");
+  const autoCountInput = document.getElementById("autoCountInput");
+  const autoGenBtn = document.getElementById("autoGenBtn");
+
+  const livesDisplay = document.getElementById("livesDisplay");
+  const taskIndexDisplay = document.getElementById("taskIndexDisplay");
+  const taskTotalDisplay = document.getElementById("taskTotalDisplay");
+  const correctCountDisplay = document.getElementById("correctCountDisplay");
+  const timeDisplay = document.getElementById("timeDisplay");
+
+  const questionText = document.getElementById("questionText");
+  const answerInput = document.getElementById("answerInput");
+  const submitAnswerBtn = document.getElementById("submitAnswerBtn");
+  const startGameBtn = document.getElementById("startGameBtn");
+  const resultArea = document.getElementById("resultArea");
+  const captainSpeech = document.getElementById("captainSpeech");
+
+  const captainEl = document.getElementById("captain");
+  const parrotEl = document.getElementById("parrot");
+
+  const audioCorrect = document.getElementById("audioCorrect");
+  const audioTreasure = document.getElementById("audioTreasure");
+  const audioLoseLife = document.getElementById("audioLoseLife");
+
+  // ---------------------------
+  // Стан гри
+  // ---------------------------
+  let lives = 3;
+  let currentTaskIndex = 0;
+  let correctCount = 0;
+  let gameStarted = false;
+  let gameFinished = false;
+  let startTime = null;
+  let timerInterval = null;
+
+  // ---------------------------
+  // Перемикання режимів
+  // ---------------------------
+  teacherModeBtn.addEventListener("click", () => {
+    teacherPanel.classList.remove("hidden");
+    studentPanel.classList.add("hidden");
+  });
+
+  studentModeBtn.addEventListener("click", () => {
+    teacherPanel.classList.add("hidden");
+    studentPanel.classList.remove("hidden");
+  });
+
+  // ---------------------------
+  // Режим вчителя
+  // ---------------------------
+  function renderTasksList() {
+    tasksListDiv.innerHTML = "";
+    if (tasks.length === 0) {
+      tasksListDiv.innerHTML = "<p>Завдань поки немає.</p>";
+      return;
+    }
+    tasks.forEach((t, i) => {
+      const div = document.createElement("div");
+      div.className = "task-item";
+      div.textContent = (i + 1) + ". " + t.question + " (відповідь: " + t.answer + ")";
+      tasksListDiv.appendChild(div);
+    });
+  }
+
+  addTaskBtn.addEventListener("click", () => {
+    const q = taskQuestionInput.value.trim();
+    const a = taskAnswerInput.value.trim();
+    if (!q || a === "") {
+      alert("Введи і завдання, і відповідь.");
+      return;
+    }
+    const num = Number(a);
+    if (isNaN(num)) {
+      alert("Відповідь має бути числом.");
+      return;
+    }
+    tasks.push({ question: q, answer: num });
+    taskQuestionInput.value = "";
+    taskAnswerInput.value = "";
+    renderTasksList();
+  });
+
+  clearTasksBtn.addEventListener("click", () => {
+    if (!confirm("Точно очистити всі завдання?")) return;
+    tasks = [];
+    renderTasksList();
+  });
+
+  generateLinkBtn.addEventListener("click", () => {
+    if (tasks.length === 0) {
+      alert("Спочатку додай хоча б одне завдання.");
+      return;
+    }
+    const json = JSON.stringify(tasks);
+    const encoded = btoa(encodeURIComponent(json));
+    const url = window.location.origin + window.location.pathname + "?tasks=" + encoded;
+    linkOutputDiv.textContent = url;
+  });
+
+  // ---------------------------
+  // Автогенерація завдань (розширена логіка)
+  // ---------------------------
+  function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function generateEasyTask() {
+    const a = getRandomInt(1, 20);
+    const b = getRandomInt(1, 20);
+    const op = Math.random() < 0.5 ? "+" : "-";
+    const question = `${a} ${op} ${b} = ?`;
+    const answer = op === "+" ? a + b : a - b;
+    return { question, answer };
+  }
+
+  function generateMediumTask() {
+    const type = getRandomInt(1, 4);
+    let a, b, question, answer;
+    if (type === 1) {
+      a = getRandomInt(2, 12);
+      b = getRandomInt(2, 12);
+      question = `${a} × ${b} = ?`;
+      answer = a * b;
+    } else if (type === 2) {
+      b = getRandomInt(2, 12);
+      answer = getRandomInt(2, 12);
+      a = b * answer;
+      question = `${a} ÷ ${b} = ?`;
+    } else {
+      a = getRandomInt(1, 50);
+      b = getRandomInt(1, 50);
+      const op = Math.random() < 0.5 ? "+" : "-";
+      question = `${a} ${op} ${b} = ?`;
+      answer = op === "+" ? a + b : a - b;
+    }
+    return { question, answer };
+  }
+
+  function generateHardTask() {
+    // Вираз виду: (a + b) × c або (a - b) × c
+    const a = getRandomInt(1, 20);
+    const b = getRandomInt(1, 20);
+    const c = getRandomInt(2, 9);
+    const op = Math.random() < 0.5 ? "+" : "-";
+    const inner = op === "+" ? a + b : a - b;
+    const question = `(${a} ${op} ${b}) × ${c} = ?`;
+    const answer = inner * c;
+    return { question, answer };
+  }
+
+  autoGenBtn.addEventListener("click", () => {
+    const difficulty = difficultySelect.value;
+    let count = Number(autoCountInput.value);
+    if (isNaN(count) || count <= 0) {
+      alert("Вкажи коректну кількість завдань.");
+      return;
+    }
+    if (count > 50) count = 50;
+
+    for (let i = 0; i < count; i++) {
+      let t;
+      if (difficulty === "easy") t = generateEasyTask();
+      else if (difficulty === "medium") t = generateMediumTask();
+      else t = generateHardTask();
+      tasks.push(t);
+    }
+    renderTasksList();
+  });
+
+  // ---------------------------
+  // Режим учня — логіка гри
+  // ---------------------------
+  function resetGameState() {
+    lives = 3;
+    currentTaskIndex = 0;
+    correctCount = 0;
+    gameStarted = false;
+    gameFinished = false;
+    startTime = null;
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    livesDisplay.textContent = lives;
+    correctCountDisplay.textContent = correctCount;
+    taskIndexDisplay.textContent = 0;
+    taskTotalDisplay.textContent = tasks.length;
+    timeDisplay.textContent = "00:00";
+    resultArea.innerHTML = "";
+    answerInput.value = "";
+    captainSpeech.textContent = "";
+    setCharactersNeutral();
+    progressStep = 0;
+    captainEl.style.transform = "translateX(0)";
+    parrotEl.style.transform = "translateX(0)";
+  }
+
+  function startGame() {
+    if (tasks.length === 0) {
+      alert("Для гри немає завдань. Перевір посилання або звернись до вчителя.");
+      return;
+    }
+    resetGameState();
+    gameStarted = true;
+    startTime = Date.now();
+    timerInterval = setInterval(updateTimer, 1000);
+    showCurrentTask();
+    captainSpeech.textContent =
+      "Капітан Роджер: \"Мені потрібна твоя допомога у пошуках скарбів! Допоможеш розв'язати завдання?\"";
+  }
+
+  function updateTimer() {
+    if (!startTime) return;
+    const diff = Math.floor((Date.now() - startTime) / 1000);
+    const minutes = String(Math.floor(diff / 60)).padStart(2, "0");
+    const seconds = String(diff % 60).padStart(2, "0");
+    timeDisplay.textContent = minutes + ":" + seconds;
+  }
+
+  function showCurrentTask() {
+    if (currentTaskIndex >= tasks.length) {
+      finishGame("allTasksDone");
+      return;
+    }
+    const task = tasks[currentTaskIndex];
+    questionText.textContent = "Завдання " + (currentTaskIndex + 1) + ": " + task.question;
+    taskIndexDisplay.textContent = currentTaskIndex + 1;
+    taskTotalDisplay.textContent = tasks.length;
+    answerInput.value = "";
+    answerInput.focus();
+    moveCharactersForward();
+  }
+
+  function submitAnswer() {
+    if (!gameStarted || gameFinished) return;
+    const val = answerInput.value.trim();
+    if (val === "") {
+      alert("Введи відповідь.");
+      return;
+    }
+    const num = Number(val);
+    if (isNaN(num)) {
+      alert("Відповідь має бути числом.");
+      return;
+    }
+    const task = tasks[currentTaskIndex];
+    if (num === task.answer) {
+      correctCount++;
+      correctCountDisplay.textContent = correctCount;
+      playCorrectSound();
+      setCharactersHappy();
+    } else {
+      lives--;
+      livesDisplay.textContent = lives;
+      playLoseLifeSound();
+      setCharactersSad();
+      if (lives <= 0) {
+        finishGame("noLives");
+        return;
+      }
+    }
+    currentTaskIndex++;
+    setTimeout(() => {
+      setCharactersNeutral();
+      showCurrentTask();
+    }, 600);
+  }
+
+  function finishGame(reason) {
+    gameFinished = true;
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    const total = tasks.length;
+    const correct = correctCount;
+    const percent = total > 0 ? (correct / total) * 100 : 0;
+    let stars = 0;
+    if (correct === 0) {
+      stars = 0;
+    } else if (percent > 75) {
+      stars = 3;
+    } else if (percent > 50) {
+      stars = 2;
+    } else if (percent < 25) {
+      stars = 1;
+    } else {
+      // 25–50% — 1 зірка
+      stars = 1;
+    }
+
+    let starsStr = "";
+    for (let i = 0; i < stars; i++) starsStr += "★";
+    for (let i = stars; i < 3; i++) starsStr += "☆";
+
+    const timeStr = timeDisplay.textContent;
+
+    let html = "<h3>Результат гри</h3>";
+    html += "<p>Правильних відповідей: <b>" + correct + "</b> з " + total + " (" + percent.toFixed(1) + "%)</p>";
+    html += "<p>Час проходження: <b>" + timeStr + "</b></p>";
+    html += "<p>Твої зірки: <span class='stars'>" + starsStr + "</span></p>";
+
+    if (reason === "allTasksDone") {
+      html += "<p>Ти дістався до скарбів піратів! Вітаємо!</p>";
+      playTreasureSound();
+      setCharactersHappy();
+      captainSpeech.textContent =
+        "Капітан Роджер: \"Дякую тобі, хоробрий герою! Ти допоміг мені знайти піратські скарби!\"";
+    } else if (reason === "noLives") {
+      html += "<p>На жаль, ти втратив усі життя. Але ти можеш спробувати ще раз!</p>";
+      setCharactersSad();
+      captainSpeech.textContent =
+        "Капітан Роджер: \"Не засмучуйся, друже. Наступного разу ми обов'язково знайдемо скарби!\"";
+    }
+
+    resultArea.innerHTML = html;
+  }
+
+  startGameBtn.addEventListener("click", startGame);
+  submitAnswerBtn.addEventListener("click", submitAnswer);
+  answerInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitAnswer();
+  });
+
+  // ---------------------------
+  // Простенька "анімація" персонажів
+  // ---------------------------
+  let progressStep = 0;
+
+  function moveCharactersForward() {
+    progressStep++;
+    const shift = 20 * progressStep; // умовний рух по карті
+    captainEl.style.transform = "translateX(" + shift + "px)";
+    parrotEl.style.transform = "translateX(" + (shift + 30) + "px)";
+    captainEl.classList.add("walking");
+    parrotEl.classList.add("walking");
+    setTimeout(() => {
+      captainEl.classList.remove("walking");
+      parrotEl.classList.remove("walking");
+    }, 600);
+  }
+
+  function setCharactersHappy() {
+    captainEl.classList.remove("sad");
+    parrotEl.classList.remove("sad");
+    captainEl.classList.add("happy");
+    parrotEl.classList.add("happy");
+  }
+
+  function setCharactersSad() {
+    captainEl.classList.remove("happy");
+    parrotEl.classList.remove("happy");
+    captainEl.classList.add("sad");
+    parrotEl.classList.add("sad");
+  }
+
+  function setCharactersNeutral() {
+    captainEl.classList.remove("happy", "sad");
+    parrotEl.classList.remove("happy", "sad");
+  }
+
+  // ---------------------------
+  // Звуки
+  // ---------------------------
+  function playCorrectSound() {
+    if (audioCorrect) {
+      audioCorrect.currentTime = 0;
+      audioCorrect.play().catch(() => {});
+    }
+  }
+
+  function playTreasureSound() {
+    if (audioTreasure) {
+      audioTreasure.currentTime = 0;
+      audioTreasure.play().catch(() => {});
+    }
+  }
+
+  function playLoseLifeSound() {
+    if (audioLoseLife) {
+      audioLoseLife.currentTime = 0;
+      audioLoseLife.play().catch(() => {});
+    }
+  }
+
+  // ---------------------------
+  // Canvas — декоративні ефекти над картою
+  // ---------------------------
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  function resizeCanvas() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    drawBackgroundEffects();
+  }
+
+  function drawBackgroundEffects() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Легка "туманність"
+    const grd = ctx.createRadialGradient(
+      canvas.width / 2, canvas.height / 2, 10,
+      canvas.width / 2, canvas.height / 2, canvas.width / 1.2
+    );
+    grd.addColorStop(0, "rgba(255,255,255,0.05)");
+    grd.addColorStop(1, "rgba(0,0,0,0.6)");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Намалюємо пунктирний шлях до скарбу
+    ctx.strokeStyle = "rgba(120, 52, 18, 0.8)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width * 0.1, canvas.height * 0.8);
+    ctx.quadraticCurveTo(
+      canvas.width * 0.3, canvas.height * 0.4,
+      canvas.width * 0.6, canvas.height * 0.6
+    );
+    ctx.quadraticCurveTo(
+      canvas.width * 0.8, canvas.height * 0.2,
+      canvas.width * 0.9, canvas.height * 0.3
+    );
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Позначка скарбу "X"
+    const x = canvas.width * 0.9;
+    const y = canvas.height * 0.3;
+    ctx.strokeStyle = "#c0392b";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(x - 10, y - 10);
+    ctx.lineTo(x + 10, y + 10);
+    ctx.moveTo(x + 10, y - 10);
+    ctx.lineTo(x - 10, y + 10);
+    ctx.stroke();
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  // ---------------------------
+  // Ініціалізація
+  // ---------------------------
+  loadTasksFromURL();
+  renderTasksList();
+  resetGameState();
+</script>
+</body>
+</html>
